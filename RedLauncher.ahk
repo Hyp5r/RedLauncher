@@ -35,6 +35,30 @@
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
+;: Exit Codes                                                 :;
+;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
+;: 0     Program closed out without any issues.               :;
+;: 300   Program closed out during #staged-askforlocation,    :;
+;:       log file required to investigate. Should be a rare   :;
+;:       occurrance.                                          :;
+;: 400   Program closed out during #staged-verifyredpyexists. :;
+;:       This would occur if someone edited the INI file's    :;
+;:       location parameter and it did not hold the red.py    :;
+;:       file.                                                :;
+;: 500   Program closed during #staged-checkforupdates. This  :;
+;:       can be due to not having Internet access or          :;
+;:       administrative rights to run the command process to  :;
+;:       update Red-DiscordBot.                               :;
+;: 600   Program closed during #staged-runredpy. Log file     :;
+;:       required to investigate. This would be related to    :;
+;:       running a cog in Red that, for whatever reason,      :;
+;:       could not launch correctly.                          :;
+;: 43468 Program closed during #staged-checkforini or         :;
+;:       #staged-disclaimer. This means that the user did not :;
+;:       agree to the disclaimer. 43468 is T9 for "idiot."    :;
+;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
+
+;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 ;: Set initial variables needed for script to function.       :;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 #NoEnv
@@ -66,10 +90,10 @@ IfExist,%@ini%
   IniRead,@checkforupdates,%@ini%,RedLauncher,checkforupdates
   IniRead,@alwayson,%@ini%,RedLauncher,alwayson
   If @mywillisgood = 0
-  { MsgBox,You just had to set MyWillIsGood to equal 0.  This means that you no longer agree to the disclaimer, so I no longer agree to work.  Set that value back to 1 and try again.
+  { MsgBox,You just had to set mywillisgood to equal 0.  This means that you no longer agree to the disclaimer, so I no longer agree to work.  Set that value back to 1 and try again.
     ExitApp,43468
     }
-  If @location =
+  If (@location = "" or @location = "ERROR")
     Gosub,#staged-askforlocation
   Gosub,#staged-verifyredpyexists
   }
@@ -78,10 +102,12 @@ IfExist,%@ini%
 ;: Read the user the disclaimer to using this program.        :;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 #staged-disclaimer:
-MsgBox,4132,%@scriptname%,Alright`, here's the disclaimer. RedLauncher is completely unaffiliated with Red-DiscordBot and the developers. What this means is that if RedLauncher fails to work for you`, sets your computer on fire`, or decides to become sentinent and take over the world`, the developers of Red-DiscordBot are not to blame and will not assist you with this script. This script is not guaranteed to work for anyone other than the author and is provided to anyone on an as-is basis. You`'re free to post issues on the RedLauncher GitLab issue tracker should you come across anything that fails to work or if you have suggestions for the script. Do you agree?
+MsgBox,4388,%@scriptname%,Alright`, here's the disclaimer. RedLauncher is completely unaffiliated with Red-DiscordBot and the developers. What this means is that if RedLauncher fails to work for you`, sets your computer on fire`, or decides to become sentinent and take over the world`, the developers of Red-DiscordBot are not to blame and will not assist you with this script.`n`nThis script is not guaranteed to work for anyone other than the author and is provided to anyone on an as-is basis. You`'re free to post issues on the RedLauncher GitLab issue tracker should you come across anything that fails to work or if you have suggestions for the script. Do you agree?,60
 IfMsgBox,Yes
-  IniWrite,1,%@ini%,RedLauncher,MyWillIsGood
-  Else
+{ IniWrite,1,%@ini%,RedLauncher,mywillisgood
+  Gosub,#staged-askforlocation
+  }
+Else
   ExitApp,43468
 
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
@@ -90,13 +116,13 @@ IfMsgBox,Yes
 #staged-askforlocation:
 FileSelectFolder,@location,,0,Please choose the folder where Red-DiscordBot is located.
 If ErrorLevel
-  ExitApp,301
+  ExitApp,300
 IfNotExist,%@location%/red.py
 { Loop,2
   { MsgBox,I didn't see red.py in the folder you selected.  Want to try again?
     FileSelectFolder,@location,,0,Please choose the folder where Red-DiscordBot is located.
     If ErrorLevel
-      ExitApp,301
+      ExitApp,300
     IfExist,%@location%/red.py
       Break
     }
@@ -105,7 +131,7 @@ IfNotExist,%@location%/red.py
 { MsgBox,Listen`, I gave you a chance`, and you blew it.  Go download Red-DiscordBot and when you get everything done`, run this again.
   ExitApp,43468
   }
-IniWrite,%@location%,%@ini%,RedLauncher,Location
+IniWrite,%@location%,%@ini%,RedLauncher,location
 Gosub,#staged-asktocheckforupdates
 
 #staged-asktocheckforupdates:
@@ -132,7 +158,7 @@ Gosub,#staged-verifyredpyexists
 SetWorkingDir,%@location%
 IfNotExist,red.py
 { MsgBox,I couldn't launch red.py since it doesn't seem to exist.  Check the INI file and make sure it's correct.  Otherwise, delete the INI file and reselect the folder by running %@scriptname% again.
-  ExitApp,401
+  ExitApp,400
   }
 Gosub,#staged-startlogfile
 
@@ -159,7 +185,7 @@ If (@checkforupdates = 1 or @manualcheckforupdate = 1)
   RunWait,*runas %comspec% /c cd %@location% & git pull & pip install --upgrade git+https://github.com/Rapptz/discord.py@async >>%@log% 2>>&1,,Hide,
   If ErrorLevel
   { MsgBox,%@scriptname% failed to update Red.  Please check the log file at %@log% for more information`, then try running %@scriptname% again.
-    ExitApp,302
+    ExitApp,500
     }
   @manualcheckforupdate = 0
   Gosub,#staged-runredpy
@@ -175,7 +201,7 @@ RunWait,%comspec% /c echo. >>%@log% & echo -------------------------------- >>%@
 Run,%comspec% /c %@python% -u red.py >>%@log% 2>>&1,%@location%,Hide,@cmdpid
 If ErrorLevel
 { MsgBox,%@scriptname% encountered an error with Red.  This could`'ve happened when starting Red or while Red was running.  Please check the log file at %@log% for more information`, then try running %@scriptname% again.'
-  ExitApp,402
+  ExitApp,600
   }
 TrayTip,%@scriptname%,Red is now active!,15,1
 Gosub,#staged-redlifesupport
@@ -217,4 +243,4 @@ Process,Close,%@cmdpid%
 Process,Close,%@python%
 TrayTip,%@scriptname%,Red was shut down from the tray icon. Red may still show as online in Discord for a little bit!,15,2
 Sleep,5000
-ExitApp
+ExitApp,0
