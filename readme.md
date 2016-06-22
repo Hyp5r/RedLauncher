@@ -14,7 +14,7 @@ To use this application, you must already have installed Red-DiscordBot using th
 ### Contributing
 Anyone can contribute to making RedLauncher a better piece of software. RedLauncher is fully written in AutoHotkey_L and is extremely easy to learn! Should you have any alterations you'd like to make, please submit an issue on the issue tracker or submit a pull request.
 
-### support
+### Support
 If you're having issues with RedLauncher, please submit an issue on the issue tracker. Before you submit an issue, please try some troubleshooting yourself, such as:
 
 * Launch Red-DiscordBot by the intended manner (running startRed.bat or startRedLoop.bat).
