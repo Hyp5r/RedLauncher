@@ -77,11 +77,9 @@ EnvGet,WinDir,WinDir
 @red = red.py
 @scriptname = RedLauncher
 @version = 1.0.0
-@ini = %@scriptname%.ini
-@redlauncherlog = %A_ScriptDir%\%@scriptname%.log
-@redpylog = %A_ScriptDir%\%@red%.log
+@ini = %A_ScriptDir%\%@scriptname%.ini
 @logstartlogfile = `;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`;: %@scriptname% Log --- %Date% at %Time%              :;`n`;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n
-@logcheckforupdates = `n`;: Checking Red-DiscordBot for updates.`n`;: %comspec% /c cd %@location% & git pull & pip install --upgrade git+https://github.com/Rapptz/discord.py@async`n`n
+@logcheckforupdates = `n`;: Checking Red-DiscordBot for updates.`n`;: %comspec% /c cd %@location% && git pull && pip install --upgrade git+https://github.com/Rapptz/discord.py@async`n`n
 @logrunredpy = `;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`;: %@scriptname% Log --- %Date% at %Time%              :;`n`;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`n`;: Starting %@red%.`n`;: %comspec% /c %@python% -u %@red%`n`n
 @logclosedbyexternal = `n`;: %@python% was closed via Discord or other external means.
 @logclosedbytray = `n`;: %@python% was closed via Tray Icon.
@@ -97,7 +95,7 @@ IfExist,%@ini%
   IniRead,@checkforupdates,%@ini%,RedLauncher,checkforupdates
   IniRead,@alwayson,%@ini%,RedLauncher,alwayson
   If @mywillisgood = 0
-  { MsgBox,You just had to set mywillisgood to equal 0.  This means that you no longer agree to the disclaimer, so I no longer agree to work.  Set that value back to 1 and try again.
+  { MsgBox,4112,%@scriptname%,You just had to set mywillisgood to equal 0. This means that you no longer agree to the disclaimer, so I no longer agree to work. Set that value back to 1 and try again.
     ExitApp,43468
     }
   If (@location = "" or @location = "ERROR")
@@ -126,7 +124,9 @@ If ErrorLevel
   ExitApp,300
 IfNotExist,%@location%/%@red%
 { Loop,2
-  { MsgBox,I didn't see %@red% in the folder you selected.  Want to try again?
+  { MsgBox,4132,%@scriptname%,I didn't see %@red% in the folder you selected.  Did you want to try again?
+    IfMsgBox,No
+      ExitApp,43468
     FileSelectFolder,@location,,0,Please choose the folder where Red-DiscordBot is located.
     If ErrorLevel
       ExitApp,300
@@ -135,14 +135,14 @@ IfNotExist,%@location%/%@red%
     }
   }
 IfNotExist,%@location%/%@red%
-{ MsgBox,Listen`, I gave you a chance`, and you blew it.  Go download Red-DiscordBot and when you get everything done`, run this again.
+{ MsgBox,4112,%@scriptname%,Listen`, I gave you a chance`, and you blew it. Go download Red-DiscordBot and when you get everything done`, run this again.
   ExitApp,43468
   }
-IniWrite,%@location%,%@ini%,RedLauncher,location
+IniWrite,"%@location%",%@ini%,RedLauncher,location
 Gosub,#staged-asktocheckforupdates
 
 #staged-asktocheckforupdates:
-MsgBox,4132,%@scriptname%,Would you like RedLauncher to automatically keep Red up-to-date? Please note that it requires that you have git installed and git is able to be used from the Windows Command Line.
+MsgBox,4132,%@scriptname%,Would you like RedLauncher to automatically keep Red up-to-date? Please note that it requires that you have git installed and git is able to be used from the Windows Command Line. This will also require administrative rights!
 IfMsgBox,Yes
   IniWrite,1,%@ini%,RedLauncher,checkforupdates
   Else
@@ -155,6 +155,15 @@ IfMsgBox,Yes
   IniWrite,1,%@ini%,RedLauncher,alwayson
   Else
   IniWrite,0,%@ini%,RedLauncher,alwayson
+Gosub,#staged-readnewini
+
+#staged-readnewini:
+IfExist,%@ini%
+{ IniRead,@mywillisgood,%@ini%,RedLauncher,mywillisgood
+  IniRead,@location,%@ini%,RedLauncher,location
+  IniRead,@checkforupdates,%@ini%,RedLauncher,checkforupdates
+  IniRead,@alwayson,%@ini%,RedLauncher,alwayson
+  }
 Gosub,#staged-verifyredpyexists
 
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
@@ -164,12 +173,27 @@ Gosub,#staged-verifyredpyexists
 #staged-verifyredpyexists:
 SetWorkingDir,%@location%
 IfNotExist,%@red%
-{ MsgBox,I couldn't launch %@red% since it doesn't seem to exist.  Check the INI file and make sure it's correct.  Otherwise, delete the INI file and reselect the folder by running %@scriptname% again.
+{ MsgBox,4132,%@scriptname%,I couldn't launch %@red% since it doesn't seem to exist. This is probably because the INI file has been changed and the location parameter doesn't have %@red%. Would you like to point %@scriptname% to Red?
+  IfMsgBox,Yes
+    Gosub,#staged-askforlocation
   ExitApp,400
   }
+SetWorkingDir,%A_ScriptDir%
 Gosub,#staged-startlogfile
 
 #staged-startlogfile:
+IniRead,@redlauncherlog,%@ini%,RedLauncher,redlauncherlog
+IniRead,@redpylog,%@ini%,RedLauncher,redpylog
+If (@redlauncherlog = "" or @redlauncherlog = "ERROR")
+{ @redlauncherlog = "%A_ScriptDir%\%@scriptname%.log"
+  IniWrite,%@redlauncherlog%,%@ini%,RedLauncher,redlauncherlog
+  MsgBox,4160,%@scriptname%,RedLauncher.log will be saved to %@redlauncherlog%.
+  }
+If (@redpylog = "" or @redpylog = "ERROR")
+{ @redpylog = "%A_ScriptDir%\%@red%.log"
+  IniWrite,%@redpylog%,%@ini%,RedLauncher,redpylog
+  MsgBox,4160,%@scriptname%,red.py.log will be saved to %@redpylog%.
+  }
 IfExist,%@redlauncherlog%
   FileDelete,%@redlauncherlog%
 IfExist,%@redpylog%
@@ -179,25 +203,36 @@ Gosub,#staged-buildtray
 
 #staged-buildtray:
 Menu,Tray,Icon
-If A_IsCompiled = 1
-  Menu,Tray,NoStandard
+Menu,Tray,NoStandard
+Menu,Tray,Add,%@scriptname% %@version%,#tray-return
+Menu,Tray,Add,William Quinn (Hyperdaemon),#tray-return
+Menu,Tray,Add,https://gitlab.com/Hyperdaemon/RedLauncher,#tray-return
+Menu,Tray,Disable,%@scriptname% %@version%
+Menu,Tray,Disable,William Quinn (Hyperdaemon)
+Menu,Tray,Disable,https://gitlab.com/Hyperdaemon/RedLauncher
+Menu,Tray,Add
 Menu,Tray,Add,Restart Red,#tray-restartred
 Menu,Tray,Add,Update and Restart Red,#tray-updateandrestartred
+Menu,Tray,Add
 Menu,Tray,Add,Close Red,#tray-closered
+Menu,Tray,Default,Close Red
+Menu,Tray,Tip,%@scriptname%
+Gosub,#staged-checkforupdates
 
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 ;: Check for updates to Red-DiscordBot by pulling from the    :;
 ;: repo. This will prompt UAC for administrative rights.      :;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 #staged-checkforupdates:
+IniRead,@checkforupdates,%@ini%,RedLauncher,checkforupdates
 If (@checkforupdates = 1 or @manualcheckforupdate = 1)
 { SetWorkingDir,%@location%
   TrayTip,%@scriptname%,Red is checking for updates.,15,1
   FileAppend,%@logcheckforupdates%,%@redlauncherlog%
   RunWait,*runas %comspec% /c cd %@location% & git pull >>%@redlauncherlog% 2>&1 & echo. >>%@redlauncherlog% 2>&1 & echo. >>%@redlauncherlog% 2>&1 & pip install --upgrade git+https://github.com/Rapptz/discord.py@async >>%@redlauncherlog% 2>&1,%@location%,Hide,
   If ErrorLevel
-  { MsgBox,%@scriptname% failed to update Red.  Please check the log file at %@redlauncherlog% for more information`, then try running %@scriptname% again.
-    ExitApp,500
+  { MsgBox,4144,%@scriptname%,%@scriptname% failed to update Red. Please check the log file at %@redlauncherlog% for more information. %@scriptname% will still try to launch Red.
+    Gosub,#staged-runredpy
     }
   @manualcheckforupdate = 0
   Gosub,#staged-runredpy
@@ -210,9 +245,11 @@ Else
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 #staged-runredpy:
 FileAppend,%@logrunredpy%,%@redpylog%
-Run,%comspec% /c %@python% -u %@red% >>%@redpylog% 2>>&1,%@location%,Hide,@cmdpid
-If ErrorLevel
-{ MsgBox,%@scriptname% encountered an error with Red.  This could`'ve happened when starting Red or while Red was running.  Please check the log files at %@redlauncherlog% and %@redpylog% for more information`, then try running %@scriptname% again.'
+Run,%comspec% /c %@python% -u %@red% >>%@redpylog% 2>&1,%@location%,Hide UseErrorLevel,@cmdpid
+If ErrorLevel = "ERROR"
+{ MsgBox,4112,%@scriptname%,%@scriptname% encountered an error with Red.  This could`'ve happened when starting Red or while Red was running.  Please check the log files at %@redlauncherlog% and %@redpylog% for more information`, then try running %@scriptname% again.'
+  Process,Close,%@cmdpid%
+  Process,Close,%@python%
   ExitApp,600
   }
 TrayTip,%@scriptname%,Red is now active!,15,1
@@ -241,6 +278,9 @@ Else
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 ;: Tray options for the RedLauncher tray menu.                :;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
+#tray-return:
+Return
+
 #tray-restartred:
 Process,Close,%@cmdpid%
 Process,Close,%@python%
