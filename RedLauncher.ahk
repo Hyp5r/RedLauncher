@@ -68,16 +68,23 @@
 SendMode,Input
 SetWorkingDir,%A_ScriptDir%
 FormatTime,Date,,yyyy-MM-dd
-FormatTime,Time,,h:mm:ss tt
+FormatTime,Time,,hh:mm:ss tt
 EnvGet,Temp,Temp
 EnvGet,Tmp,Tmp
 EnvGet,WinDir,WinDir
 @install = %A_Temp%\af066a14-3a70-475c-b0d0-8309a2bfa118
 @python = py.exe
+@red = red.py
 @scriptname = RedLauncher
 @version = 1.0.0
 @ini = %@scriptname%.ini
-@log = %A_ScriptDir%\%@scriptname%.log
+@redlauncherlog = %A_ScriptDir%\%@scriptname%.log
+@redpylog = %A_ScriptDir%\%@red%.log
+@logstartlogfile = `;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`;: %@scriptname% Log --- %Date% at %Time%              :;`n`;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n
+@logcheckforupdates = `n`;: Checking Red-DiscordBot for updates.`n`;: %comspec% /c cd %@location% & git pull & pip install --upgrade git+https://github.com/Rapptz/discord.py@async`n`n
+@logrunredpy = `;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`;: %@scriptname% Log --- %Date% at %Time%              :;`n`;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`n`;: Starting %@red%.`n`;: %comspec% /c %@python% -u %@red%`n`n
+@logclosedbyexternal = `n`;: %@python% was closed via Discord or other external means.
+@logclosedbytray = `n`;: %@python% was closed via Tray Icon.
 
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 ;: Check directory for INI file. If INI not found, ask the    :;
@@ -117,17 +124,17 @@ Else
 FileSelectFolder,@location,,0,Please choose the folder where Red-DiscordBot is located.
 If ErrorLevel
   ExitApp,300
-IfNotExist,%@location%/red.py
+IfNotExist,%@location%/%@red%
 { Loop,2
-  { MsgBox,I didn't see red.py in the folder you selected.  Want to try again?
+  { MsgBox,I didn't see %@red% in the folder you selected.  Want to try again?
     FileSelectFolder,@location,,0,Please choose the folder where Red-DiscordBot is located.
     If ErrorLevel
       ExitApp,300
-    IfExist,%@location%/red.py
+    IfExist,%@location%/%@red%
       Break
     }
   }
-IfNotExist,%@location%/red.py
+IfNotExist,%@location%/%@red%
 { MsgBox,Listen`, I gave you a chance`, and you blew it.  Go download Red-DiscordBot and when you get everything done`, run this again.
   ExitApp,43468
   }
@@ -151,24 +158,29 @@ IfMsgBox,Yes
 Gosub,#staged-verifyredpyexists
 
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
-;: Verify that red.py exists, then start the log file and     :;
+;: Verify that %@red% exists, then start the log file and     :;
 ;: build the tray icon's options.                             :;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 #staged-verifyredpyexists:
 SetWorkingDir,%@location%
-IfNotExist,red.py
-{ MsgBox,I couldn't launch red.py since it doesn't seem to exist.  Check the INI file and make sure it's correct.  Otherwise, delete the INI file and reselect the folder by running %@scriptname% again.
+IfNotExist,%@red%
+{ MsgBox,I couldn't launch %@red% since it doesn't seem to exist.  Check the INI file and make sure it's correct.  Otherwise, delete the INI file and reselect the folder by running %@scriptname% again.
   ExitApp,400
   }
 Gosub,#staged-startlogfile
 
 #staged-startlogfile:
-RunWait,%comspec% /c echo RedLauncher Log >%@log% & date /t >>%@log% & time /t >>%@log% & echo -------------------------------- >>%@log%,,Hide,
+IfExist,%@redlauncherlog%
+  FileDelete,%@redlauncherlog%
+IfExist,%@redpylog%
+  FileDelete,%@redpylog%
+FileAppend,%@logstartlogfile%,%@redlauncherlog%
 Gosub,#staged-buildtray
 
 #staged-buildtray:
 Menu,Tray,Icon
-Menu,Tray,NoStandard
+If A_IsCompiled = 1
+  Menu,Tray,NoStandard
 Menu,Tray,Add,Restart Red,#tray-restartred
 Menu,Tray,Add,Update and Restart Red,#tray-updateandrestartred
 Menu,Tray,Add,Close Red,#tray-closered
@@ -181,10 +193,10 @@ Menu,Tray,Add,Close Red,#tray-closered
 If (@checkforupdates = 1 or @manualcheckforupdate = 1)
 { SetWorkingDir,%@location%
   TrayTip,%@scriptname%,Red is checking for updates.,15,1
-  RunWait,%comspec% /c echo Checking Red for updates ... >>%@log% & echo -------------------------------- >>%@log%,,Hide,
-  RunWait,*runas %comspec% /c cd %@location% & git pull & pip install --upgrade git+https://github.com/Rapptz/discord.py@async >>%@log% 2>>&1,,Hide,
+  FileAppend,%@logcheckforupdates%,%@redlauncherlog%
+  RunWait,*runas %comspec% /c cd %@location% & git pull >>%@redlauncherlog% 2>&1 & echo. >>%@redlauncherlog% 2>&1 & echo. >>%@redlauncherlog% 2>&1 & pip install --upgrade git+https://github.com/Rapptz/discord.py@async >>%@redlauncherlog% 2>&1,%@location%,Hide,
   If ErrorLevel
-  { MsgBox,%@scriptname% failed to update Red.  Please check the log file at %@log% for more information`, then try running %@scriptname% again.
+  { MsgBox,%@scriptname% failed to update Red.  Please check the log file at %@redlauncherlog% for more information`, then try running %@scriptname% again.
     ExitApp,500
     }
   @manualcheckforupdate = 0
@@ -197,16 +209,17 @@ Else
 ;: Run Red-DiscordBot and start the RedLauncher life support. :;
 ;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;
 #staged-runredpy:
-RunWait,%comspec% /c echo. >>%@log% & echo -------------------------------- >>%@log% & echo Starting Red ... >>%@log% & echo -------------------------------- >>%@log%,,Hide,
-Run,%comspec% /c %@python% -u red.py >>%@log% 2>>&1,%@location%,Hide,@cmdpid
+FileAppend,%@logrunredpy%,%@redpylog%
+Run,%comspec% /c %@python% -u %@red% >>%@redpylog% 2>>&1,%@location%,Hide,@cmdpid
 If ErrorLevel
-{ MsgBox,%@scriptname% encountered an error with Red.  This could`'ve happened when starting Red or while Red was running.  Please check the log file at %@log% for more information`, then try running %@scriptname% again.'
+{ MsgBox,%@scriptname% encountered an error with Red.  This could`'ve happened when starting Red or while Red was running.  Please check the log files at %@redlauncherlog% and %@redpylog% for more information`, then try running %@scriptname% again.'
   ExitApp,600
   }
 TrayTip,%@scriptname%,Red is now active!,15,1
 Gosub,#staged-redlifesupport
 
 #staged-redlifesupport:
+FileAppend,`n`;: Monitoring %@python% with a background cmd.exe process.`n`;: PID: %@cmdpid%`n,%@redlauncherlog% ; Cannot place this log in a variable due to not having @cmdpid defined until #staged-runredpy.
 Process,WaitClose,%@cmdpid%,
 @redmonitor = %ErrorLevel%
 If @redmonitor = 0 ; Funnily enough, 0 in this case means it did close.  Otherwise, ErrorLevel would be the PID of the CMD process spawned.
@@ -220,7 +233,8 @@ If @alwayson = 1
   Gosub,#staged-runredpy
 Else
   Process,Close,%@python%
-  TrayTip,%@scriptname%,Red has been shut down.,15,2
+  FileAppend,%@logclosedbyexternal%,%@redlauncherlog%
+  TrayTip,%@scriptname%,Red was shut down by Discord or other external means.,15,2
   Sleep,5000
   ExitApp,0
 
@@ -241,6 +255,7 @@ Gosub,#staged-checkforupdates
 #tray-closered:
 Process,Close,%@cmdpid%
 Process,Close,%@python%
+FileAppend,%@logclosedbytray%,%@redlauncherlog%
 TrayTip,%@scriptname%,Red was shut down from the tray icon. Red may still show as online in Discord for a little bit!,15,2
 Sleep,5000
 ExitApp,0
