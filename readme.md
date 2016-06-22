@@ -26,3 +26,4 @@ Two log files are generated when using **RedLauncher**.  These log files are nam
 
 ### Licensing
 RedLauncher is licensed under the Creative Commons Attribution-ShareAlike 4.0 International license. Please [view the license](https://gitlab.com/Hyperdaemon/RedLauncher/blob/master/LICENSE) for more information.
+The icon used in RedLauncher's official compiled EXE is provided by [icons8.com](https://icons8.com) and is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unported license.
