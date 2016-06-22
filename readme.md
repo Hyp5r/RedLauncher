@@ -25,5 +25,6 @@ Two log files are generated when using **RedLauncher**.  These log files are nam
 **Please note that I do not provide support for any issues that are specific to Red-DiscordBot. If you need assistance with setting up the bot or bot issues, please join their Discord channel by [clicking here](https://discord.gg/0k4npTwMvTpv9wrh).**
 
 ### Licensing
-RedLauncher is licensed under the Creative Commons Attribution-ShareAlike 4.0 International license. Please [view the license](https://gitlab.com/Hyperdaemon/RedLauncher/blob/master/LICENSE) for more information.
-The icon used in RedLauncher's official compiled EXE is provided by [icons8.com](https://icons8.com) and is licensed under the Creative Commons Attribution-NoDerivs 3.0 Unported license.
+RedLauncher is licensed under the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/) license. Please [view the license](https://gitlab.com/Hyperdaemon/RedLauncher/blob/master/LICENSE) for more information.
+
+The [icon used in RedLauncher's official compiled EXE](https://gitlab.com/Hyperdaemon/RedLauncher/blob/master/icon.ico) is provided by [icons8.com](https://icons8.com) and is licensed under the [Creative Commons Attribution-NoDerivs 3.0 Unported](https://creativecommons.org/licenses/by-nd/3.0/) license.
