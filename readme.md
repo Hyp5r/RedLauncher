@@ -8,7 +8,7 @@
 * Management of log files to find issues quickly.
 * Ability to keep Red-DiscordBot persistent, preventing it from shutting down.
 
-### Use of this application.
+### Use
 To use this application, you must already have installed Red-DiscordBot using the steps provided [at the Red-Docs wiki](https://twentysix26.github.io/Red-Docs/). Failure to follow those instructions may prevent this application from working correctly. Specifically, RedLauncher relies on you having Python and Git usable in the Windows Command Prompt. You can find more information on that [by clicking here](https://twentysix26.github.io/Red-Docs/red_win_requirements/).
 
 ### Contributing
