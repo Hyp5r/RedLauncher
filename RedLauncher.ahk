@@ -76,7 +76,7 @@ EnvGet,WinDir,WinDir
 @python = py.exe
 @red = red.py
 @scriptname = RedLauncher
-@version = 1.0.0
+@version = 1.0.1
 @ini = %A_ScriptDir%\%@scriptname%.ini
 @logstartlogfile = `;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n`;: %@scriptname% Log --- %Date% at %Time%              :;`n`;::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::;`n
 @logcheckforupdates = `n`;: Checking Red-DiscordBot for updates.`n`;: %comspec% /c cd %@location% && git pull && pip install --upgrade git+https://github.com/Rapptz/discord.py@async`n`n
@@ -100,6 +100,10 @@ IfExist,%@ini%
     }
   If (@location = "" or @location = "ERROR")
     Gosub,#staged-askforlocation
+  If (@checkforupdates = "" or @checkforupdates = "ERROR")
+    Gosub,#staged-asktocheckforupdates
+  If (@alwayson = "" or @alwayson = "ERROR")
+    Gosub,#staged-asktostayalwayson
   Gosub,#staged-verifyredpyexists
   }
 
@@ -229,7 +233,7 @@ If (@checkforupdates = 1 or @manualcheckforupdate = 1)
 { SetWorkingDir,%@location%
   TrayTip,%@scriptname%,Red is checking for updates.,,1
   FileAppend,%@logcheckforupdates%,%@redlauncherlog%
-  RunWait,*runas %comspec% /c cd %@location% & git pull >>%@redlauncherlog% 2>&1 & echo. >>%@redlauncherlog% 2>&1 & echo. >>%@redlauncherlog% 2>&1 & pip install --upgrade git+https://github.com/Rapptz/discord.py@async >>%@redlauncherlog% 2>&1,%@location%,Hide UseErrorLevel,
+  RunWait,*runas %comspec% /c cd %@location% & update.bat,%@location%,UseErrorLevel,
   If ErrorLevel
   { MsgBox,4144,%@scriptname%,%@scriptname% failed to update Red. This could be due to either you not having administrative permissions or something within the update script failed. Please check the log file at %@redlauncherlog% for more information.`n`n%@scriptname% will still try to launch Red once this has been dismissed.
     Gosub,#staged-runredpy
