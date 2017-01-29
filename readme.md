@@ -1,3 +1,5 @@
+`This project is no longer maintained and support will not be provided.`
+
 # RedLauncher
 ## A Windows application that launches the Red-DiscordBot to the system tray, complete with relaunching capabilities!
 
